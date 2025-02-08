@@ -1,7 +1,11 @@
 package com.assignment.asm.service;
 
 import com.assignment.asm.dto.response.UserResponse;
+import com.assignment.asm.mapper.UserMapper;
 import com.assignment.asm.model.User;
+import lombok.AccessLevel;
+import lombok.RequiredArgsConstructor;
+import lombok.experimental.FieldDefaults;
 import net.sf.jasperreports.engine.*;
 import net.sf.jasperreports.engine.data.JRBeanCollectionDataSource;
 import net.sf.jasperreports.engine.export.ooxml.JRXlsxExporter;
@@ -13,100 +17,75 @@ import org.springframework.stereotype.Service;
 import java.io.ByteArrayOutputStream;
 import java.io.FileNotFoundException;
 import java.io.InputStream;
+import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
 
 @Service
+@FieldDefaults(level = AccessLevel.PRIVATE, makeFinal = true)
+@RequiredArgsConstructor
 public class ReportService implements IReportService {
-    @Override
-    public byte[] generatePdfListUser(List<User> users) throws JRException, FileNotFoundException {
-        try {
-            List<UserResponse> listUser = users.stream()
-                    .map(user -> new UserResponse(
-                            user.getId(),
-                            user.getFirstName(),
-                            user.getLastName(),
-                            user.getEmail(),
-                            user.getUsername()
-                    ))
-                    .collect(Collectors.toList());
 
-            InputStream reportStream = getClass().getClassLoader().getResourceAsStream("reports/JasperReportFarmStore.jrxml");
+    @Override
+    public byte[] generatePdfListUser(List<UserResponse> users) throws JRException, FileNotFoundException {
+        try (InputStream reportStream = getClass().getClassLoader().getResourceAsStream("report/template-jasper.jrxml")) {
             if (reportStream == null) {
-                throw new FileNotFoundException("Jasper report file not found in classpath");
+                throw new FileNotFoundException("Cannot find the report template file");
             }
             JasperReport jasperReport = JasperCompileManager.compileReport(reportStream);
-            JRBeanCollectionDataSource dataSource = new JRBeanCollectionDataSource(listUser);
+            JRBeanCollectionDataSource dataSource = new JRBeanCollectionDataSource(users);
             Map<String, Object> parameters = new HashMap<>();
-
+            parameters.put("ReportTitle", "List Users");
+            parameters.put("GeneratedDate", new Date());
             JasperPrint jasperPrint = JasperFillManager.fillReport(jasperReport, parameters, dataSource);
+
             ByteArrayOutputStream outputStream = new ByteArrayOutputStream();
             JasperExportManager.exportReportToPdfStream(jasperPrint, outputStream);
-
             return outputStream.toByteArray();
-        }catch (JRException e) {
-            System.out.println("JRException: " + e.getMessage());
-            e.printStackTrace();
-            throw e;
-        } catch (FileNotFoundException e) {
-            System.out.println("FileNotFoundException: " + e.getMessage());
+        } catch (JRException | FileNotFoundException e) {
             e.printStackTrace();
             throw e;
         } catch (Exception e) {
             e.printStackTrace();
-            throw e;
+            throw new RuntimeException("Unexpected error during PDF generation", e);
         }
     }
 
     @Override
-    public byte[] generateExcelListUser(List<User> users) throws JRException, FileNotFoundException {
-        try {
-            List<UserResponse> listUser = users.stream()
-                    .map(user -> new UserResponse(
-                            user.getId(),
-                            user.getFirstName(),
-                            user.getLastName(),
-                            user.getEmail(),
-                            user.getUsername()
-                    ))
-                    .collect(Collectors.toList());
-
-            InputStream reportStream = getClass().getClassLoader().getResourceAsStream("reports/JasperReportFarmStore.jrxml");
+    public byte[] generateExcelListUser(List<UserResponse> users) {
+        try (InputStream reportStream = getClass().getClassLoader().getResourceAsStream("report/template-jasper.jrxml")) {
             if (reportStream == null) {
-                throw new FileNotFoundException("Jasper report file not found in classpath");
+                throw new FileNotFoundException("Cannot find the report template file");
             }
 
             JasperReport jasperReport = JasperCompileManager.compileReport(reportStream);
-            JRBeanCollectionDataSource dataSource = new JRBeanCollectionDataSource(listUser);
+            JRBeanCollectionDataSource dataSource = new JRBeanCollectionDataSource(users);
+
             Map<String, Object> parameters = new HashMap<>();
+            parameters.put("ReportTitle", "List Users");
+            parameters.put("GeneratedDate", new Date());
 
             JasperPrint jasperPrint = JasperFillManager.fillReport(jasperReport, parameters, dataSource);
 
-            // Xuất báo cáo sang Excel
             ByteArrayOutputStream outputStream = new ByteArrayOutputStream();
-            JRXlsxExporter exporter = new JRXlsxExporter();
-            exporter.setExporterInput(new SimpleExporterInput(jasperPrint));
-            exporter.setExporterOutput(new SimpleOutputStreamExporterOutput(outputStream));
+            JRXlsxExporter jrXlsxExporter = new JRXlsxExporter();
+            jrXlsxExporter.setExporterInput(new SimpleExporterInput(jasperPrint));
+            jrXlsxExporter.setExporterOutput(new SimpleOutputStreamExporterOutput(outputStream));
 
-            // Cấu hình xuất Excel (tùy chọn)
-            SimpleXlsxReportConfiguration configuration = new SimpleXlsxReportConfiguration();
-            configuration.setOnePagePerSheet(false); // Cho phép nhiều trang trên một sheet
-            configuration.setRemoveEmptySpaceBetweenRows(true); // Loại bỏ khoảng trắng thừa
-            exporter.setConfiguration(configuration);
+            SimpleXlsxReportConfiguration simpleXlsxReportConfiguration = new SimpleXlsxReportConfiguration();
+            simpleXlsxReportConfiguration.setOnePagePerSheet(false);
+            simpleXlsxReportConfiguration.setRemoveEmptySpaceBetweenRows(true);
+            simpleXlsxReportConfiguration.setDetectCellType(true);
+            simpleXlsxReportConfiguration.setCollapseRowSpan(false);
+            jrXlsxExporter.setConfiguration(simpleXlsxReportConfiguration);
 
-            exporter.exportReport();
+            jrXlsxExporter.exportReport();
 
             return outputStream.toByteArray();
-        } catch (JRException e) {
-            System.out.println("JRException: " + e.getMessage());
-            throw e;
-        } catch (FileNotFoundException e) {
-            System.out.println("FileNotFoundException: " + e.getMessage());
-            throw e;
         } catch (Exception e) {
-            throw e;
+            throw new RuntimeException("Lỗi khi tạo file Excel", e);
         }
     }
 }
