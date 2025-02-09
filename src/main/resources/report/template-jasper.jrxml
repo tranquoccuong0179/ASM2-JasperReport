@@ -31,7 +31,7 @@
 <!--                <imageExpression><![CDATA["cherry.jpg"]]></imageExpression>-->
 <!--            </image>-->
             <frame>
-                <reportElement mode="Opaque" x="0" y="0" width="451" height="95" backcolor="#000000" uuid="6c6ca4e1-17cd-4913-93d6-5e670ea9ae8a"/>
+                <reportElement mode="Opaque" x="0" y="0" width="555" height="95" backcolor="#000000" uuid="6c6ca4e1-17cd-4913-93d6-5e670ea9ae8a"/>
                 <staticText>
                     <reportElement style="Title" x="0" y="0" width="370" height="66" uuid="a2a2cac8-5a7d-4487-8c54-dab235ce4e21"/>
                     <textElement textAlignment="Center" verticalAlignment="Middle">
@@ -48,7 +48,7 @@
 <!--                </staticText>-->
             </frame>
             <frame>
-                <reportElement mode="Opaque" x="0" y="100" width="451" height="32" forecolor="#000000" backcolor="#CC0000" uuid="e3c14156-5b51-4201-918b-97fdc012e5d4"/>
+                <reportElement mode="Opaque" x="0" y="100" width="555" height="32" forecolor="#000000" backcolor="#CC0000" uuid="e3c14156-5b51-4201-918b-97fdc012e5d4"/>
                 <textField pattern="EEEEE dd MMMMM yyyy">
                     <reportElement x="307" y="12" width="144" height="20" forecolor="#FFFFFF" uuid="5c3301e7-a737-4c59-8a2f-a6c79fd1adb8"/>
                     <textElement textAlignment="Right">
@@ -197,6 +197,7 @@
                         <font size="10" isBold="false"/>
                     </textElement>
                     <textFieldExpression><![CDATA[new java.util.Date()]]></textFieldExpression>
+                    <patternExpression><![CDATA["dd/MM/yyyy HH:mm:ss"]]></patternExpression>
                 </textField>
             </frame>
         </band>
